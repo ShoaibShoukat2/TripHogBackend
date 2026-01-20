@@ -9,7 +9,7 @@ const http = require('http');
 const { initializeSocket } = require('./io');
 app.use(cors());
 
-const allowedOrigins = ['https://triphog.net', 'https://www.triphog.net', 'http://localhost:3000', 'http://localhost:3001'];
+const allowedOrigins = ['https://triphog.net', 'https://www.triphog.net', 'https://api.triphog.net', 'http://localhost:3000', 'http://localhost:3001'];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -70,6 +70,28 @@ app.use("/api/v1/patient", patientRouter);
 app.use("/api/v1/trip", tripRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/notification", notificationRouter)
+
+// Base API route for health check
+app.get("/api/v1", (req, res) => {
+  res.json({ 
+    status: "success", 
+    message: "Triphog API is running",
+    version: "1.0.0",
+    endpoints: {
+      auth: "/auth",
+      superadmin: "/api/v1/superadmin",
+      admin: "/api/v1/admin",
+      meeting: "/api/v1/meeting",
+      driver: "/api/v1/driver",
+      patient: "/api/v1/patient",
+      trip: "/api/v1/trip",
+      user: "/api/v1/user",
+      chat: "/api/v1/chat",
+      notification: "/api/v1/notification"
+    }
+  });
+});
+
 // For Create admin password
 app.get('/admin/user/createpassword/*', (req, res) => {
   res.redirect('https://triphog.net/admin/create-password/' + req.params[0]);
