@@ -2,6 +2,7 @@ const PatientModel = require('../models/PatientModel')
 const TripModel = require('../models/TripModel')
 const Admin = require("../models/adminSchema");
 const nodemailer = require('nodemailer')
+const { createEmailTransporter } = require("../utils/emailConfig");
 const bcrypt = require('bcryptjs')
 const crypto = require('crypto')
 const fs = require('fs');
@@ -29,15 +30,7 @@ exports.forgotPassword = async (req, res) => {
     if (!patient) {
       res.json({ success: false, message: "Patient Not Found" });
     } else {
-      const transport = nodemailer.createTransport({
-        service: "gmail",
-        secure: true,
-        port: 465,
-        auth: {
-          user: "contact.alinventors@gmail.com",
-          pass: "sxmp lxuv jckd savw",
-        },
-      });
+      const transport = createEmailTransporter();
       const token = crypto.randomBytes(20).toString("hex");
 
       patient.passwordResetToken = token;
@@ -386,15 +379,7 @@ exports.addPatient = async (req, res) => {
     }
 
     // Create a transport
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      secure: true,
-      port: 465,
-      auth: {
-        user: "contact.alinventors@gmail.com",
-        pass: "sxmp lxuv jckd savw",
-      },
-    });
+    const transporter = createEmailTransporter();
 
     // Function to send the email
     async function sendEmail(to, subject, data) {

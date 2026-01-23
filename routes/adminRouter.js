@@ -1,6 +1,6 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const JWT_SECRET = "sdfd345ef_dfdf";
+const JWT_SECRET = process.env.JWT_SECRET || "sdfd345ef_dfdf";
 const { verify } = require("../middlewares/verify");
 const multer = require("multer");
 const {

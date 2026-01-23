@@ -1,15 +1,10 @@
 const nodemailer = require("nodemailer");
+const { createEmailTransporter } = require("./utils/emailConfig");
 
-const EMAIL_USER="contact.alinventors@gmail.com"
-const EMAIL_PASS="sxmp lxuv jckd savw"
+const EMAIL_USER = process.env.GMAIL_EMAIL || "contact.alinventors@gmail.com";
+const EMAIL_PASS = process.env.GMAIL_PASSWORD || "sxmp lxuv jckd savw";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail", // Use your email service (e.g., 'gmail', 'outlook')
-  auth: {
-    user: EMAIL_USER, // Your email address
-    pass: EMAIL_PASS, // Your email password or app-specific
-  },
-});
+const transporter = createEmailTransporter();
 
 const sendMail = async (options) => {
   const { to, subject, text} = options;

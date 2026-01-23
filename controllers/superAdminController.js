@@ -8,21 +8,14 @@ const PaymentModel = require(`${__dirname}/../models/paymentSchema`);
 const SuperAdminModel = require("../models/SuperAdminModel");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+const { createEmailTransporter } = require("../utils/emailConfig");
 const ChatConversation = require("../models/ChatConversation");
 const ChatMessage = require("../models/ChatMessage");
 const { default: mongoose } = require("mongoose");
 const UserModel = require("../models/UserModel");
 
 // Email transport configuration
-const transport = nodemailer.createTransport({
-  service: "gmail",
-  secure: true,
-  port: 465,
-  auth: {
-    user: "contact.alinventors@gmail.com",
-    pass: "sxmp lxuv jckd savw",
-  },
-});
+const transport = createEmailTransporter();
 exports.addDoc = async (req, res) => {
   console.log("Adding Doc For admin");
   try {
@@ -291,8 +284,6 @@ exports.createSuperAdmin = async (req, res) => {
 exports.superAdminLogin = async (req, res) => {
   try {
     const { EMailAddress, passWord } = req.body;
-
-    await SuperAdminModel.findByIdAndDelete();
 
     const superAdmin = await SuperAdminModel.findOne({
       EMailAddress,

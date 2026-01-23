@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const { createEmailTransporter } = require("../utils/emailConfig");
 const crypto = require("crypto");
 const Admin = require("../models/adminSchema");
 const bcrypt = require("bcryptjs");
@@ -10,15 +11,7 @@ const ChatConversation = require("../models/ChatConversation");
 const { default: mongoose } = require("mongoose");
 const ChatMessage = require("../models/ChatMessage");
 const JWT_SECRET = "sdfd345ef_dfdf";
-const transport = nodemailer.createTransport({
-  service: "gmail",
-  secure: true,
-  port: 465,
-  auth: {
-    user: "contact.alinventors@gmail.com",
-    pass: "sxmp lxuv jckd savw",
-  },
-});
+const transport = createEmailTransporter();
 exports.deleteSelected = async (req, res) => {
   console.log("Req.query", req.query);
   console.log(" Users Ids", req.body.selectedUsersIds);

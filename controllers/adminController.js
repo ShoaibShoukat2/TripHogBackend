@@ -6,22 +6,15 @@ const PatientModel = require("../models/PatientModel");
 const sendMail = require("../mailer");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const JWT_SECRET = "sdfd345ef_dfdf";
+const JWT_SECRET = process.env.JWT_SECRET || "sdfd345ef_dfdf";
 const JWT_COOKIE_EXPIRES_IN = "600000";
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+const { createEmailTransporter } = require("../utils/emailConfig");
 
 const stripe = require("stripe")(process.env.STRIPE_KEY);
 
-const mailerTransport = nodemailer.createTransport({
-  service: "gmail",
-  secure: true,
-  port: 465,
-  auth: {
-    user: "contact.alinventors@gmail.com",
-    pass: "sxmp lxuv jckd savw",
-  },
-});
+const mailerTransport = createEmailTransporter();
 
 // Helper function to create and send token via cookie
 const createSendToken = (admin, statusCode, res) => {
@@ -246,15 +239,7 @@ exports.addReview = async (req, res) => {
 };
 exports.approveDriver = async (req, res) => {
   try {
-    const transport = nodemailer.createTransport({
-      service: "gmail",
-      secure: true,
-      port: 465,
-      auth: {
-        user: "contact.alinventors@gmail.com",
-        pass: "sxmp lxuv jckd savw",
-      },
-    });
+    const transport = createEmailTransporter();
     let driver = await DriverModel.findById(req.params.driverId);
     driver.isApproved = true;
     await driver.save();
@@ -271,15 +256,7 @@ exports.approveDriver = async (req, res) => {
 };
 exports.denyDriver = async (req, res) => {
   try {
-    const transport = nodemailer.createTransport({
-      service: "gmail",
-      secure: true,
-      port: 465,
-      auth: {
-        user: "contact.alinventors@gmail.com",
-        pass: "sxmp lxuv jckd savw",
-      },
-    });
+    const transport = createEmailTransporter();
     let driver = await DriverModel.findById(req.params.driverId);
     driver.isApproved = false;
     await driver.save();
@@ -533,19 +510,36 @@ exports.changePassword = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
+    console.log('🔍 Admin login request received:', req.body);
+    console.log('🔗 Database URL:', process.env.DB_CONNECTION);
+    console.log('🔗 Database Name:', process.env.DB_NAME);
+    
+    // Check total admins
+    const totalAdmins = await Admin.countDocuments();
+    console.log('📊 Total admins in database:', totalAdmins);
+    
+    // List all admin emails
+    const allAdmins = await Admin.find({}, 'email').limit(5);
+    console.log('📋 Available admin emails:', allAdmins.map(a => a.email));
+    
     const { email, password } = req.body;
     if (!email || !password) {
+      console.log('❌ Missing email or password');
       return res
         .status(400)
         .json({ success: false, message: "Please provide email and password" });
     }
 
+    console.log('🔍 Looking for admin with email:', email);
     const admin = await Admin.findOne({ email });
     if (!admin) {
+      console.log('❌ Admin not found in database');
       return res
         .status(401)
         .json({ success: false, message: "Admin not found" });
     }
+
+    console.log('✅ Admin found:', admin.email);
 
     if (!admin.password) {
       return res

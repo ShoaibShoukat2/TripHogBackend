@@ -5,6 +5,7 @@ const path = require("path");
 const Admin = require("../models/adminSchema");
 const TripModel = require("../models/TripModel");
 const nodemailer = require("nodemailer");
+const { createEmailTransporter } = require("../utils/emailConfig");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const { DateTime } = require("luxon");
@@ -97,15 +98,7 @@ exports.forgotPassword = async (req, res) => {
     if (!driver) {
       res.json({ success: false, message: "Driver Not Found" });
     } else {
-      const transport = nodemailer.createTransport({
-        service: "gmail",
-        secure: true,
-        port: 465,
-        auth: {
-          user: "contact.alinventors@gmail.com",
-          pass: "sxmp lxuv jckd savw",
-        },
-      });
+      const transport = createEmailTransporter();
       const token = crypto.randomBytes(20).toString("hex");
 
       driver.passwordResetToken = token;
@@ -560,15 +553,7 @@ exports.changePassword = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const transport = nodemailer.createTransport({
-      service: "gmail",
-      secure: true,
-      port: 465,
-      auth: {
-        user: "contact.alinventors@gmail.com",
-        pass: "sxmp lxuv jckd savw",
-      },
-    });
+    const transport = createEmailTransporter();
 
     console.log(">>REQ BODY", req.body);
     let driver = await DriverModel.findOne({
@@ -773,15 +758,7 @@ exports.addNewDriver = async (req, res) => {
     }
 
     // Create a transport
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      secure: true,
-      port: 465,
-      auth: {
-        user: "contact.alinventors@gmail.com",
-        pass: "sxmp lxuv jckd savw",
-      },
-    });
+    const transporter = createEmailTransporter();
 
     // Function to send the email
     async function sendEmail(to, subject, data) {
