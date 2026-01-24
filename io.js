@@ -27,7 +27,7 @@ const initializeSocket = (server) => {
     cors: {
       origin: [
         "https://triphog.net",
-        "https://www.triphog.net",
+        "https://www.triphog.net", 
         "https://api.triphog.net",
         "http://localhost:3000",
         "http://localhost:3001",
@@ -41,7 +41,26 @@ const initializeSocket = (server) => {
     pingTimeout: 120000,
     pingInterval: 30000,
     transports: ['polling', 'websocket'],
-    allowEIO3: true
+    allowEIO3: true,
+    allowRequest: (req, callback) => {
+      const origin = req.headers.origin;
+      const allowedOrigins = [
+        "https://triphog.net",
+        "https://www.triphog.net",
+        "https://api.triphog.net", 
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+      ];
+      
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log('Socket.IO blocked origin:', origin);
+        callback('Origin not allowed', false);
+      }
+    }
   });
 
   IO.on("connection", (socket) => {

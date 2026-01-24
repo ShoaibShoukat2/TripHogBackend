@@ -6,6 +6,12 @@ const fs = require("fs");
 const path = require("path");
 const { DBConfig, AppConfig } = require("./config");
 
+// Log environment info for debugging
+console.log("Environment:", process.env.NODE_ENV);
+console.log("Port:", process.env.PORT);
+console.log("Frontend URL:", process.env.FRONTEND_URL);
+console.log("DB Connection:", process.env.DB_CONNECTION ? "Configured" : "Missing");
+
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {

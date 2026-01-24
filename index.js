@@ -56,8 +56,8 @@ app.use((req, res, next) => {
   
   // Set CORS headers manually for extra safety
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -193,7 +193,32 @@ process.on('unhandledRejection', (reason, promise) => {
 
 app.use("*", (req, resp) => {
   console.log(`404 - Route not found: ${req.method} ${req.originalUrl}`);
+  
+  // Set CORS headers even for 404 responses
+  const origin = req.headers.origin;
+  if (!origin || allowedOrigins.includes(origin)) {
+    resp.header('Access-Control-Allow-Origin', origin || '*');
+    resp.header('Access-Control-Allow-Credentials', 'true');
+  }
+  
   resp.status(404).json({ status: "fail", message: "Page Not Found" });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Global error handler:', err.message);
+  
+  // Set CORS headers even for error responses
+  const origin = req.headers.origin;
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  res.status(500).json({ 
+    status: "error", 
+    message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message 
+  });
 });
 
 module.exports = { app, server };
