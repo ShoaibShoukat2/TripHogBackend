@@ -28,13 +28,20 @@ const initializeSocket = (server) => {
       origin: [
         "https://triphog.net",
         "https://www.triphog.net",
+        "https://api.triphog.net",
         "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
       ],
-      methods: ["GET", "POST", "PUT", "DELETE"],
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
     },
     pingTimeout: 120000,
     pingInterval: 30000,
+    transports: ['polling', 'websocket'],
+    allowEIO3: true
   });
 
   IO.on("connection", (socket) => {
