@@ -339,14 +339,36 @@ exports.pay = async (req, res) => {
 };
 exports.updateLocation = async (req, res) => {
   try {
-    await DriverModel.findByIdAndUpdate(
+    const updatedDriver = await DriverModel.findByIdAndUpdate(
       req.driverId,
       { longitude: req.body.longitude, latitude: req.body.latitude },
       { new: true, runValidators: true }
     );
-    res.json({ success: true });
+
+    // Emit location update via socket
+    const { getIO } = require('../io');
+    const io = getIO();
+    
+    const locationData = {
+      driverRef: req.driverId,
+      addedBy: req.driverId,
+      latitude: req.body.latitude,
+      longitude: req.body.longitude,
+      timestamp: new Date(),
+      driverName: `${updatedDriver.firstName} ${updatedDriver.lastName}`,
+      isAvailable: updatedDriver.isAvailable
+    };
+
+    // Emit to all connected clients (admins, patients, etc.)
+    io.emit("location-changed", locationData);
+    io.emit("update-location", locationData);
+    
+    console.log("Driver location updated and broadcasted:", locationData);
+    
+    res.json({ success: true, location: locationData });
   } catch (e) {
-    res.json({ success: false });
+    console.error("Error updating driver location:", e);
+    res.json({ success: false, error: e.message });
   }
 };
 exports.getDrivenDrivers = async (req, res) => {
@@ -1070,5 +1092,66 @@ exports.getDriverStats = async (req, res) => {
       success: false,
       message: e.message,
     });
+  }
+};
+
+// Test endpoint to simulate location updates for debugging
+exports.testLocationUpdate = async (req, res) => {
+  try {
+    const { driverId, latitude, longitude } = req.body;
+    
+    if (!driverId || !latitude || !longitude) {
+      return res.json({ 
+        success: false, 
+        message: "driverId, latitude, and longitude are required" 
+      });
+    }
+
+    const driver = await DriverModel.findById(driverId);
+    if (!driver) {
+      return res.json({ success: false, message: "Driver not found" });
+    }
+
+    // Update driver location in database
+    const updatedDriver = await DriverModel.findByIdAndUpdate(
+      driverId,
+      { longitude: parseFloat(longitude), latitude: parseFloat(latitude) },
+      { new: true, runValidators: true }
+    );
+
+    // Emit location update via socket
+    const { getIO } = require('../io');
+    const io = getIO();
+    
+    const locationData = {
+      driverRef: driverId,
+      addedBy: driverId,
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      timestamp: new Date(),
+      driverName: `${updatedDriver.firstName} ${updatedDriver.lastName}`,
+      isAvailable: updatedDriver.isAvailable
+    };
+
+    // Emit to all connected clients
+    io.emit("location-changed", locationData);
+    io.emit("update-location", locationData);
+    
+    console.log("Test location update broadcasted:", locationData);
+    
+    res.json({ 
+      success: true, 
+      message: "Location updated and broadcasted successfully",
+      location: locationData,
+      driver: {
+        id: updatedDriver._id,
+        name: `${updatedDriver.firstName} ${updatedDriver.lastName}`,
+        latitude: updatedDriver.latitude,
+        longitude: updatedDriver.longitude
+      }
+    });
+  } catch (e) {
+    console.error("Error in test location update:", e);
+    res.json({ success: false, error: e.message });
   }
 };

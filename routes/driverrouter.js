@@ -27,6 +27,7 @@ const {
   getDocs,
   addDoc,
   deleteDoc,
+  testLocationUpdate,
 } = require("../controllers/driverController");
 const { verify } = require("../middlewares/verify");
 const multer = require("multer");
@@ -244,5 +245,8 @@ router.post(
   changePassword
 );
 router.get("/stats", verify, getDriverStats);
+
+// Test endpoint for location updates (for debugging)
+router.post("/test-location-update", testLocationUpdate);
 
 module.exports = router
