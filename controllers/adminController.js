@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "sdfd345ef_dfdf";
 const JWT_COOKIE_EXPIRES_IN = "600000";
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
-const { createEmailTransporter } = require("../utils/emailConfig");
+const { createEmailTransporter, sendEmailSafely } = require("../utils/emailConfig");
 
 const stripe = require("stripe")(process.env.STRIPE_KEY);
 
@@ -243,14 +243,22 @@ exports.approveDriver = async (req, res) => {
     let driver = await DriverModel.findById(req.params.driverId);
     driver.isApproved = true;
     await driver.save();
-    await transport.sendMail({
+    
+    // Try to send email but don't fail if it doesn't work
+    const emailResult = await sendEmailSafely(transport, {
       from: "admin@triphog.com",
       to: driver.EMailAddress,
       subject: "You Can Now Log In To Your Account!",
       text: "Your Account Has Been Approved By The Admin!You Can Now Login And Get Started",
     });
+    
+    if (!emailResult.success) {
+      console.warn("Failed to send approval email to driver:", emailResult.error);
+    }
+    
     res.json({ success: true });
   } catch (e) {
+    console.error("Error approving driver:", e);
     res.json({ success: false, message: e.message });
   }
 };
@@ -260,14 +268,22 @@ exports.denyDriver = async (req, res) => {
     let driver = await DriverModel.findById(req.params.driverId);
     driver.isApproved = false;
     await driver.save();
-    await transport.sendMail({
+    
+    // Try to send email but don't fail if it doesn't work
+    const emailResult = await sendEmailSafely(transport, {
       from: "admin@triphog.com",
       to: driver.EMailAddress,
       subject: "Your Account Has Been Denied By The Admin!",
       text: "Your Account Has Been Denied By The Admin!Please Contact The Admin",
     });
+    
+    if (!emailResult.success) {
+      console.warn("Failed to send denial email to driver:", emailResult.error);
+    }
+    
     res.json({ success: true });
   } catch (e) {
+    console.error("Error denying driver:", e);
     res.json({ success: false, message: e.message });
   }
 };
@@ -554,6 +570,8 @@ exports.login = async (req, res) => {
         .json({ success: false, message: "Incorrect password" });
     }
 
+    console.log('✅ Password matched, generating token...');
+
     const token = jwt.sign(
       {
         id: admin._id,
@@ -566,8 +584,11 @@ exports.login = async (req, res) => {
       { expiresIn: "6d" }
     );
 
+    console.log('✅ Token generated successfully');
+
     // Send response only once
     if (admin.hasPlan) {
+      console.log('✅ Admin has plan, sending full response');
       return res.json({
         success: true,
         token,
@@ -579,6 +600,7 @@ exports.login = async (req, res) => {
         hasPlan: true,
       });
     } else {
+      console.log('✅ Admin has no plan, sending basic response');
       return res.json({
         success: true,
         token,
@@ -588,7 +610,7 @@ exports.login = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("❌ Login error:", error);
     return res
       .status(500)
       .json({ success: false, message: "An error occurred during login" });
@@ -773,18 +795,28 @@ exports.forgotPassword = async (req, res) => {
     const resetURL = `https://triphog.net/reset-password/${token}?userType=admin`;
     const message = `Click on the link to reset your password: ${resetURL}`;
 
-    await mailerTransport.sendMail({
+    // Try to send email but don't fail if it doesn't work
+    const emailResult = await sendEmailSafely(mailerTransport, {
       from: "admin@triphog.com",
       to: admin.email,
       subject: "Reset Your Password | Trip Hog",
       text: message,
     });
 
-    return res.status(200).json({
-      success: true,
-      message: "Reset Password link sent successfully.",
-    });
+    if (emailResult.success) {
+      return res.status(200).json({
+        success: true,
+        message: "Reset Password link sent successfully.",
+      });
+    } else {
+      console.error("Failed to send reset password email:", emailResult.error);
+      return res.status(200).json({
+        success: false,
+        message: "Error sending reset password link. Please check your email configuration or try again later.",
+      });
+    }
   } catch (e) {
+    console.error("Error in forgotPassword:", e);
     return res.status(200).json({
       success: false,
       message: "Error sending reset password link, please try again later.",
@@ -1155,5 +1187,46 @@ exports.removeFrequentlyVisitedPage = async (req, res) => {
     });
   } catch (err) {
     res.json({ success: false, message: "Server error" });
+  }
+};
+
+// Test endpoint to check email configuration
+exports.testEmail = async (req, res) => {
+  try {
+    const transport = createEmailTransporter();
+    
+    // Test connection first
+    await transport.verify();
+    console.log('✅ Gmail connection verified');
+    
+    // Send test email
+    const emailResult = await sendEmailSafely(transport, {
+      from: process.env.GMAIL_EMAIL || "contact.alinventors@gmail.com",
+      to: process.env.GMAIL_EMAIL || "contact.alinventors@gmail.com",
+      subject: "Test Email - Triphog Server",
+      text: "This is a test email to verify Gmail SMTP configuration.",
+      html: "<p>This is a test email to verify Gmail SMTP configuration.</p>"
+    });
+    
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: "Email configuration is working correctly",
+        messageId: emailResult.messageId
+      });
+    } else {
+      res.json({
+        success: false,
+        message: "Email sending failed",
+        error: emailResult.error
+      });
+    }
+  } catch (error) {
+    console.error('❌ Email test failed:', error);
+    res.json({
+      success: false,
+      message: "Email configuration test failed",
+      error: error.message
+    });
   }
 };

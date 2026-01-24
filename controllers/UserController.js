@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const { createEmailTransporter } = require("../utils/emailConfig");
+const { createEmailTransporter, sendEmailSafely } = require("../utils/emailConfig");
 const crypto = require("crypto");
 const Admin = require("../models/adminSchema");
 const bcrypt = require("bcryptjs");

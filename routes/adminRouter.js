@@ -33,6 +33,7 @@ const {
   addFrequentlyVisitedPage,
   getFrequentlyVisitedPages,
   removeFrequentlyVisitedPage,
+  testEmail,
 } = require("../controllers/adminController");
 let storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -114,5 +115,8 @@ router.delete("/chat/delete-conversation", verify, deleteConversations);
 router.post("/frequent/add", addFrequentlyVisitedPage);
 router.post("/frequent/get", getFrequentlyVisitedPages);
 router.post("/frequent/remove", removeFrequentlyVisitedPage);
+
+// Test email configuration
+router.get("/test-email", testEmail);
 
 module.exports = router;

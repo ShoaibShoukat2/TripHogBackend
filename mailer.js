@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const { createEmailTransporter } = require("./utils/emailConfig");
+const { createEmailTransporter, sendEmailSafely } = require("./utils/emailConfig");
 
 const EMAIL_USER = process.env.GMAIL_EMAIL || "contact.alinventors@gmail.com";
 const EMAIL_PASS = process.env.GMAIL_PASSWORD || "sxmp lxuv jckd savw";
@@ -10,7 +10,7 @@ const sendMail = async (options) => {
   const { to, subject, text} = options;
 
   console.log("EMAIL USER", EMAIL_USER);
-  console.log("EMAIL PASS", EMAIL_PASS);
+  console.log("EMAIL PASS", EMAIL_PASS ? "***HIDDEN***" : "NOT SET");
 
   // Create HTML content for demo request
   const htmlContent = `
@@ -36,19 +36,24 @@ const sendMail = async (options) => {
     subject, // Email subject
     text, // Plain text body
     html: htmlContent, // HTML body
- 
   };
-  
-  
 
   try {
-      console.log("Mail is being sent to",to)
-    await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully");
-    return true;
+    console.log("Mail is being sent to", to);
+    const result = await sendEmailSafely(transporter, mailOptions);
+    
+    if (result.success) {
+      console.log("Email sent successfully");
+      return true;
+    } else {
+      console.error("Email sending failed:", result.error);
+      // Don't throw error, just log it and return false
+      return false;
+    }
   } catch (error) {
-    console.error("Error sending email:", error);
-    throw error; // Re-throw the error so the calling function can handle it
+    console.error("Error in sendMail function:", error);
+    // Don't throw error, just log it and return false
+    return false;
   }
 };
 
